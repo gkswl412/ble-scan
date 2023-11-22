@@ -17,18 +17,12 @@ import android.os.Looper
 import android.os.ParcelUuid
 import android.util.Log
 import android.widget.Button
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
-import com.example.blescan.ui.theme.BleScanTheme
+import java.nio.ByteBuffer
+
+
+
 
 class MainActivity : Activity() {
     private lateinit var bluetoothLeScanner : BluetoothLeScanner
@@ -67,10 +61,21 @@ class MainActivity : Activity() {
         @RequiresApi(Build.VERSION_CODES.O)
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            Log.d(TAG, result.scanRecord.toString())
-            Log.d(TAG, result.device.address.toString())
-            Log.d(TAG, result.dataStatus.toString())
-            Log.d(TAG, result.advertisingSid.toString())
+            if (result.scanRecord != null && result.scanRecord!!.serviceData != null && result.scanRecord?.serviceData?.get(
+                    ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63")) != null) {
+                var receiveTime = System.currentTimeMillis()
+                var sendTime = byteArrayToLong(
+                    result.scanRecord?.serviceData?.get(
+                        ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63"))!!
+                )
+                Log.d(TAG, "송신 시간 : $sendTime\n수신 시간 : $receiveTime")
+                Log.d(TAG, "시간차(ms) : ${receiveTime - sendTime}")
+            }
+//            Log.d(TAG, result.scanRecord.toString())
+//            Log.d(TAG, result.scanRecord?.serviceUuids.toString())
+//            Log.d(TAG, result.device.address.toString())
+//            Log.d(TAG, result.dataStatus.toString())
+//            Log.d(TAG, result.advertisingSid.toString())
         }
     }
 
@@ -93,7 +98,9 @@ class MainActivity : Activity() {
         }
         val filters: List<ScanFilter> = listOf(
             ScanFilter.Builder()
-                .setServiceUuid(ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63".lowercase())) // 원하는 기기의 이름으로 필터링
+                .setServiceData(ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63".lowercase()), byteArrayOf())
+                //.setManufacturerData(1, byteArrayOf())
+                //.setServiceUuid(ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63".lowercase())) // 원하는 기기의 이름으로 필터링
                 .build(),
             // 또는 다른 필터를 추가할 수 있음
         )
@@ -102,7 +109,7 @@ class MainActivity : Activity() {
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
             .build()
 
-        bluetoothLeScanner.startScan(leScanCallback)
+        bluetoothLeScanner.startScan(filters, settings, leScanCallback)
     }
 
     private fun stopScan() {
@@ -121,5 +128,11 @@ class MainActivity : Activity() {
             return
         }
         bluetoothLeScanner.stopScan(leScanCallback)
+    }
+
+    fun byteArrayToLong(byteArray: ByteArray): Long {
+        require(byteArray.size == java.lang.Long.BYTES) { "배열 길이가 올바르지 않습니다." }
+        val buffer = ByteBuffer.wrap(byteArray)
+        return buffer.long
     }
 }
