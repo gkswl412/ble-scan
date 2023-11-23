@@ -21,19 +21,15 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import java.nio.ByteBuffer
 
-
-
-
 class MainActivity : Activity() {
     private lateinit var bluetoothLeScanner : BluetoothLeScanner
     private var scanning = false
-    private val handler = Handler(Looper.getMainLooper())
     private lateinit var mScanButton: Button
     private lateinit var mStopScanButton: Button
 
     companion object {
         const val TAG = "scan result"
-        const val SCAN_PERIOD: Long = 10000
+        const val STRING_UUID: String = "CDB7950D-73F1-4D4D-8E47-C090502DBD63"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,22 +58,18 @@ class MainActivity : Activity() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
             if (result.scanRecord != null && result.scanRecord!!.serviceData != null && result.scanRecord?.serviceData?.get(
-                    ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63")) != null) {
+                    ParcelUuid.fromString(STRING_UUID)) != null) {
                 var receiveTime = System.currentTimeMillis()
                 var sendTime = byteArrayToLong(
                     result.scanRecord?.serviceData?.get(
-                        ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63"))!!
+                        ParcelUuid.fromString(STRING_UUID))!!
                 )
                 Log.d(TAG, "송신 시간 : $sendTime\n수신 시간 : $receiveTime")
                 Log.d(TAG, "시간차(ms) : ${receiveTime - sendTime}")
             }
-//            Log.d(TAG, result.scanRecord.toString())
-//            Log.d(TAG, result.scanRecord?.serviceUuids.toString())
-//            Log.d(TAG, result.device.address.toString())
-//            Log.d(TAG, result.dataStatus.toString())
-//            Log.d(TAG, result.advertisingSid.toString())
         }
     }
+
 
     private fun scanLeDevice() {
         scanning = true
@@ -86,23 +78,13 @@ class MainActivity : Activity() {
                 Manifest.permission.BLUETOOTH_SCAN
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.ACCESS_FINE_LOCATION), 100)
             return
         }
         val filters: List<ScanFilter> = listOf(
             ScanFilter.Builder()
-                .setServiceData(ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63".lowercase()), byteArrayOf())
-                //.setManufacturerData(1, byteArrayOf())
-                //.setServiceUuid(ParcelUuid.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63".lowercase())) // 원하는 기기의 이름으로 필터링
+                .setServiceData(ParcelUuid.fromString(STRING_UUID.lowercase()), byteArrayOf())
                 .build(),
-            // 또는 다른 필터를 추가할 수 있음
         )
 
         val settings: ScanSettings = ScanSettings.Builder()
@@ -118,13 +100,6 @@ class MainActivity : Activity() {
                 Manifest.permission.BLUETOOTH_SCAN
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return
         }
         bluetoothLeScanner.stopScan(leScanCallback)
